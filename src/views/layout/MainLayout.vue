@@ -24,6 +24,10 @@
           </el-icon>
           <template #title>仪表盘</template>
         </el-menu-item>
+                <el-menu-item index="/meeting">
+
+                  <template #title>会议记录</template>
+                </el-menu-item>
 
         <el-sub-menu index="/proposal">
           <template #title>
@@ -72,6 +76,7 @@
             <span>安全设置</span>
           </el-menu-item>
         </el-sub-menu>
+
       </el-menu>
 
       <div class="collapse-button">
@@ -144,6 +149,7 @@ import {useRoute, useRouter} from 'vue-router'
 import {ElMessageBox} from 'element-plus'
 import {useUserStore} from '@/store/user'
 import Breadcrumb from '@/components/Breadcrumb.vue'
+import MeetingRecords from "../meeting/MeetingRecords.vue";
 //import defaultAvatar from '@/assets/default-avatar.png'
 
 const router = useRouter()

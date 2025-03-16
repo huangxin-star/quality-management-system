@@ -35,6 +35,12 @@ const routes = [
         meta: { title: "仪表盘" },
       },
       {
+        path: "meeting",
+        name: "MeetingRecords",
+        component: () => import("../views/meeting/MeetingRecords.vue"),
+        meta: { title: "会议记录" },
+      },
+      {
         path: "proposal/submit",
         name: "SubmitProposal",
         component: () =>

@@ -258,7 +258,7 @@ const proposalForm = reactive(initEmptyForm())
 // 草稿操作
 const saveDraft = () => {
   // 克隆当前表单数据以避免引用问题
-  const draftData = JSON.parse(JSON.stringify(proposalForm))
+  const draftData = JSON.parse(JSON.stringify(x))
 
   // 标记为草稿
   draftData.status = 'draft'
