@@ -13,7 +13,9 @@
               :class="{ disabled: currentIndex === 0 }"
               @click="currentIndex > 0 && switchProposal(currentIndex - 1)"
           >
-            <el-icon><ArrowLeft /></el-icon>
+            <el-icon>
+              <ArrowLeft/>
+            </el-icon>
           </div>
           <div class="proposal-index">
             当前第 {{ currentIndex + 1 }} 条 / 共 {{ pendingProposals.length }} 条
@@ -23,7 +25,9 @@
               :class="{ disabled: currentIndex >= pendingProposals.length - 1 }"
               @click="currentIndex < pendingProposals.length - 1 && switchProposal(currentIndex + 1)"
           >
-            <el-icon><ArrowRight /></el-icon>
+            <el-icon>
+              <ArrowRight/>
+            </el-icon>
           </div>
         </div>
       </div>
@@ -32,9 +36,10 @@
       <template #header>
         <div class="card-header">
           <span class="header-title">不良原因分析与对策表单</span>
-          <el-button type="primary" @click="submitForm" :loading="loading">提交</el-button>
-          <el-button @click="handleCancel">取消</el-button>
-
+          <div class="header-buttons">
+            <el-button type="primary" @click="submitForm" :loading="loading">提交</el-button>
+            <el-button @click="handleCancel">取消</el-button>
+          </div>
         </div>
       </template>
 
@@ -138,7 +143,16 @@
               placeholder="请分析根本原因"
           />
         </el-form-item>
-
+        <!-- 风险评估 -->
+        <el-divider content-position="left">风险评估</el-divider>
+        <el-form-item label="风险评估" prop="risk">
+          <el-input
+              v-model="defectForm.risk"
+              type="textarea"
+              :rows="3"
+              placeholder="请评估风险"
+          />
+        </el-form-item>
         <!-- 对策 -->
         <el-divider content-position="left">改进对策</el-divider>
 
@@ -237,11 +251,35 @@ import {onMounted, reactive, ref} from 'vue'
 import {ArrowLeft, ArrowRight, Plus} from '@element-plus/icons-vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {useRouter} from 'vue-router'
+
 const router = useRouter()
 // 初始化空表单
 const initEmptyForm = () => {
   return {
-    defectDescription:'',
+    // 基本信息
+    defectCode: '', // 模拟生成的编号
+    createDate: new Date().toISOString().split('T')[0],
+    analyst: '', // 默认为当前用户
+    department: '',
+
+    // 不良原因分析
+    defectDescription: '',
+    defectCause: '',
+    problemCategory: '',
+    isNpiMissed: '',
+    isRepeated: '',
+    rootCause: '',
+
+    // 对策
+    shortTermMeasures: '',
+    longTermMeasures: '',
+    planCompletionDate: '',
+    responsible: '',
+
+    // 验证
+    verificationMethod: '',
+    verificationResult: '',
+    verificationDescription: '',
     status: 'draft' // 新增状态字段，用于标识是否为草稿
   }
 }
@@ -631,6 +669,11 @@ onMounted(() => {
   align-items: center;
 }
 
+.header-buttons {
+  display: flex; /* 让按钮在一行排列 */
+  gap: 10px; /* 按钮间距 */
+}
+
 .header-title {
   font-size: 18px;
   font-weight: bold;
@@ -694,5 +737,9 @@ onMounted(() => {
 .proposal-index {
   font-size: 14px;
   color: #606266;
+}
+
+:deep(.el-tag__content) {
+  font-size: larger;
 }
 </style>

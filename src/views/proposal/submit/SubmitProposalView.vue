@@ -8,6 +8,8 @@
           <div class="header-actions">
             <el-button @click="handleCancel">取消</el-button>
             <el-button type="primary" @click="submitForm" :loading="loading">提交</el-button>
+            <el-button type="primary" @click="exportToExcel">导出 Excel</el-button>
+
           </div>
         </div>
       </template>
@@ -143,10 +145,12 @@
         <el-form-item label="不良图片" class="full-width">
           <el-upload
               action="#"
-              :auto-upload="false"
+              :auto-upload="true"
               :file-list="fileList"
               :on-change="handleFileChange"
               :on-remove="handleFileRemove"
+              :on-success="handleSuccess"
+              :on-error="handleError"
               multiple
               drag
           >
@@ -158,7 +162,7 @@
             </div>
             <template #tip>
               <div class="el-upload__tip">
-                请不要上传敏感数据，比如你的银行卡号和密码，信用卡号有效期和安全码
+                请不要上传敏感数据
               </div>
             </template>
           </el-upload>
@@ -175,6 +179,8 @@ import {useRouter} from 'vue-router'
 import {UploadFilled} from '@element-plus/icons-vue'
 import {useProposalStore} from '@/store/proposal'
 import {formatDate} from '@/utils/formatters'
+import * as XLSX from "xlsx";
+import {saveAs} from "file-saver";
 
 const router = useRouter()
 const proposalStore = useProposalStore()
@@ -253,17 +259,46 @@ const initEmptyForm = () => {
   }
 }
 
+
+// 导出 Excel 方法
+// 需要填充的数据
+const tableData = ref([
+  {name: "张三", department: "质量管理部", employeeId: "123456"},
+  {name: "李四", department: "生产部", employeeId: "654321"},
+]);
+
+const exportToExcel = async () => {
+  // 1️⃣ 读取 Excel 模板
+  const response = await fetch("/test.xlsx");
+  const arrayBuffer = await response.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, {type: "array"});
+
+  // 2️⃣ 选择第一个工作表
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+
+  // 3️⃣ 填充数据到 Excel（确保不覆盖原有数据）
+  const dataArray = tableData.value.map(item => [item.name, item.department, item.employeeId]);
+
+  // ✅ 使用 `XLSX.utils.sheet_add_aoa` 批量填充，防止遗漏单元格
+  XLSX.utils.sheet_add_aoa(worksheet, dataArray, {origin: "A2"}); // 从 A2 开始写入数据
+
+  // 4️⃣ 生成新的 Excel 并下载
+  const excelBuffer = XLSX.write(workbook, {bookType: "xlsx", type: "array"});
+  saveAs(new Blob([excelBuffer]), "导出的Excel.xlsx");
+};
 const proposalForm = reactive(initEmptyForm())
 
 // 草稿操作
 const saveDraft = () => {
+  console.log('----')
   // 克隆当前表单数据以避免引用问题
-  const draftData = JSON.parse(JSON.stringify(x))
-
+  const draftData = JSON.parse(JSON.stringify(proposalForm))
+  console.log(draftData)
   // 标记为草稿
   draftData.status = 'draft'
   draftData.savedAt = new Date().toISOString()
-
+  console.log(draftData)
   // 保存到本地存储
   localStorage.setItem('proposalDraft', JSON.stringify(draftData))
 
@@ -437,15 +472,40 @@ onMounted(async () => {
 })
 
 // 文件上传处理
-const handleFileChange = (file) => {
-  fileList.value.push(file)
-}
+// 文件选择时的处理函数
+const handleFileChange = (file, fileListFromComponent) => {
+  const isJPGorPNG = file.type === "image/jpeg" || file.type === "image/png";
+  const isLt2M = file.size / 1024 / 1024 < 2;
+
+  if (!isJPGorPNG) {
+    ElMessage.error("只能上传 JPG/PNG 格式的图片");
+    return;
+  }
+  if (!isLt2M) {
+    ElMessage.error("图片大小不能超过 2MB");
+    return;
+  }
+  // 校验通过后再手动更新 fileList
+  fileList.value.push(file);
+};
+
 
 const handleFileRemove = (file) => {
   const index = fileList.value.findIndex(item => item.uid === file.uid)
   if (index !== -1) {
     fileList.value.splice(index, 1)
   }
+}
+
+
+// 上传成功回调
+const handleSuccess = (response, file) => {
+  ElMessage.success(`文件 ${file.name} 上传成功！`);
+}
+
+// 上传失败回调
+const handleError = () => {
+  ElMessage.error("上传失败，请重试！");
 }
 
 // 提交表单
@@ -470,7 +530,7 @@ const submitForm = async () => {
     }
 
     // 提交提案
-    await proposalStore.submitDefectProposal(proposalData)
+    await proposalStore.submitProposal(proposalData)
 
     // 清除草稿
     clearDraft()
@@ -490,7 +550,7 @@ const submitForm = async () => {
       resetForm()
     }).catch(() => {
       // 跳转到提案列表
-      router.push('/proposal/history')
+      router.push('/proposal/submit')
     })
   } catch (error) {
     console.error('Submit error:', error)
